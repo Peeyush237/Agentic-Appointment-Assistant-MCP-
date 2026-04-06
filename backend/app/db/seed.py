@@ -3,7 +3,10 @@ from datetime import datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.auth import hash_password
+from app.core.config import settings
 from app.db.models import Doctor, Appointment
+from app.db.models import User
 
 
 def seed_data(db: Session) -> None:
@@ -16,6 +19,21 @@ def seed_data(db: Session) -> None:
         existing = db.scalar(select(Doctor).where(Doctor.name == doctor_name))
         if not existing:
             db.add(Doctor(name=doctor_name, specialization=specialization))
+
+    doctor_user = db.scalar(select(User).where(User.email == settings.default_doctor_login_email))
+    if not doctor_user:
+        db.add(
+            User(
+                email=settings.default_doctor_login_email,
+                full_name="Dr. Ahuja",
+                role="doctor",
+                password_hash=hash_password(settings.default_doctor_login_password),
+            )
+        )
+    else:
+        doctor_user.full_name = doctor_user.full_name or "Dr. Ahuja"
+        doctor_user.role = "doctor"
+        doctor_user.password_hash = hash_password(settings.default_doctor_login_password)
 
     db.commit()
 

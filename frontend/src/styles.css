@@ -37,6 +37,12 @@ header h1 {
   margin: 12px 0 16px;
 }
 
+.sessionBar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
 .roleToggle button,
 button {
   border: none;
@@ -56,6 +62,78 @@ button {
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   padding: 16px;
+}
+
+.authCard {
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 16px;
+  max-width: 540px;
+}
+
+.authFields {
+  display: grid;
+  gap: 8px;
+}
+
+.authActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.authError {
+  color: #b91c1c;
+  margin-top: 10px;
+}
+
+.workspaceGrid {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 12px;
+}
+
+.chatSidebar {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 10px;
+  min-height: 520px;
+}
+
+.chatSidebarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.chatList {
+  display: grid;
+  gap: 8px;
+}
+
+.chatListItem {
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  text-align: left;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.chatListItem.active {
+  border-color: #0e7490;
+  background: #ecfeff;
+}
+
+.chatListTitle {
+  font-weight: 600;
+}
+
+.chatListMeta {
+  font-size: 12px;
+  color: #64748b;
 }
 
 .hint {
@@ -113,6 +191,10 @@ pre {
 @media (max-width: 640px) {
   .container {
     padding: 12px;
+  }
+
+  .workspaceGrid {
+    grid-template-columns: 1fr;
   }
 
   .composer {

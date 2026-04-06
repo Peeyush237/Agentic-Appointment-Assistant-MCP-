@@ -1,10 +1,17 @@
 const API_BASE = "http://127.0.0.1:8000/api";
 
-export async function sendChat(payload) {
-  const response = await fetch(`${API_BASE}/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+async function request(path, options = {}, token = null) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers,
   });
 
   if (!response.ok) {
@@ -18,5 +25,63 @@ export async function sendChat(payload) {
     throw new Error(`Request failed with status ${response.status}${detail}`);
   }
 
-  return response.json();
+  return response.status === 204 ? null : response.json();
+}
+
+export async function register(payload) {
+  return request("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function login(payload) {
+  return request("/auth/login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function logout(token) {
+  return request(
+    "/auth/logout",
+    {
+      method: "POST",
+    },
+    token
+  );
+}
+
+export async function getMe(token) {
+  return request("/me", { method: "GET" }, token);
+}
+
+export async function listChats(token) {
+  return request("/chats", { method: "GET" }, token);
+}
+
+export async function createChat(token, title = "") {
+  return request(
+    "/chats",
+    {
+      method: "POST",
+      body: JSON.stringify({ title }),
+    },
+    token
+  );
+}
+
+export async function getChatMessages(token, chatId) {
+  return request(`/chats/${chatId}/messages`, { method: "GET" }, token);
+}
+
+export async function sendChat(token, payload) {
+  return request(
+    "/chat",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    token
+  );
 }

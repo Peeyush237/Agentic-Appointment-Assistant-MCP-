@@ -90,7 +90,7 @@ copy .env.example .env
 Update `backend/.env`:
 - `DATABASE_URL`
 - `OPENAI_API_KEY`
-- optional: `GOOGLE_ACCESS_TOKEN`
+- Google Calendar (recommended): `GOOGLE_REFRESH_TOKEN`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (optional fallback: `GOOGLE_ACCESS_TOKEN`)
 - for live patient email via SendGrid: `EMAIL_PROVIDER=sendgrid`, `EMAIL_FROM`, `EMAIL_API_KEY`
 - for live doctor notifications: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`, `DOCTOR_WHATSAPP_TO`
 
@@ -136,7 +136,9 @@ Doctor mode:
 
 ## Optional integrations
 
-- Google Calendar: provide `GOOGLE_ACCESS_TOKEN` and `GOOGLE_CALENDAR_ID`
+- Google Calendar: provide `GOOGLE_CALENDAR_ID` and either:
+  - recommended refresh flow: `GOOGLE_REFRESH_TOKEN`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+  - fallback static token: `GOOGLE_ACCESS_TOKEN`
 - Email provider (SendGrid): set `EMAIL_PROVIDER=sendgrid`, `EMAIL_FROM` (verified sender), and `EMAIL_API_KEY`
 - Doctor notification (WhatsApp): set Twilio credentials for live notifications
 

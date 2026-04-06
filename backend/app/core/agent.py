@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from collections import defaultdict
 from datetime import datetime
 from uuid import uuid4
 from zoneinfo import ZoneInfo
@@ -15,7 +14,6 @@ from app.mcp.client import MCPClient
 class AgentOrchestrator:
     def __init__(self):
         self.mcp = MCPClient(settings.mcp_server_url)
-        self.sessions: dict[str, list[dict]] = defaultdict(list)
         self.client = (
             AsyncOpenAI(
                 api_key=settings.openai_api_key,
@@ -56,7 +54,13 @@ class AgentOrchestrator:
             f"{now.isoformat()} | day={now.strftime('%A')} | timezone={timezone_name}."
         )
 
-    async def run(self, role: str, user_message: str, session_id: str | None = None) -> dict:
+    async def run(
+        self,
+        role: str,
+        user_message: str,
+        session_id: str | None = None,
+        history: list[dict] | None = None,
+    ) -> dict:
         if not self.client:
             return {
                 "session_id": session_id or str(uuid4()),
@@ -65,7 +69,7 @@ class AgentOrchestrator:
             }
 
         session_id = session_id or str(uuid4())
-        history = self.sessions[session_id]
+        history = history or []
 
         tools = await self.mcp.list_tools()
         openai_tools = [
@@ -118,10 +122,6 @@ class AgentOrchestrator:
 
             if not message.tool_calls:
                 answer = message.content or "No response generated"
-                history.extend([
-                    {"role": "user", "content": user_message},
-                    {"role": "assistant", "content": answer},
-                ])
                 return {"session_id": session_id, "answer": answer, "tool_trace": tool_trace}
 
             messages.append(
