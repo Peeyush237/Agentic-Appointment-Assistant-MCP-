@@ -1,4 +1,10 @@
-const API_BASE = "http://127.0.0.1:8000/api";
+const RAW_API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  (typeof window !== "undefined" && /localhost|127\.0\.0\.1/.test(window.location.hostname)
+    ? "http://127.0.0.1:8000"
+    : "");
+
+const API_BASE = `${RAW_API_BASE.replace(/\/+$/, "")}/api`;
 
 async function request(path, options = {}, token = null) {
   const headers = {
