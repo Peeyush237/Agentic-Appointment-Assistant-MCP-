@@ -4,9 +4,19 @@ const RAW_API_BASE =
     ? "http://127.0.0.1:8000"
     : "");
 
-const API_BASE = `${RAW_API_BASE.replace(/\/+$/, "")}/api`;
+const normalizedBase = RAW_API_BASE.replace(/\/+$/, "").replace(/\/api$/, "");
+const API_BASE = normalizedBase ? `${normalizedBase}/api` : "";
+
+function ensureApiConfigured() {
+  if (API_BASE) return;
+  throw new Error(
+    "Frontend API is not configured. Set VITE_API_BASE_URL in Vercel to your Render backend URL (without /api)."
+  );
+}
 
 async function request(path, options = {}, token = null) {
+  ensureApiConfigured();
+
   const headers = {
     "Content-Type": "application/json",
     ...(options.headers || {}),
