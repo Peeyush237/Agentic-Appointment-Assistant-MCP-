@@ -101,7 +101,7 @@ export default function ChatPanel({ token, user }) {
 
   return (
     <div className="workspaceGrid">
-      <aside className="chatSidebar brutalCard">
+      <aside className="chatSidebar surfaceCard">
         <div className="chatSidebarHeader">
           <h3>Your Chats</h3>
           <button onClick={startNewChat} disabled={busy}>
@@ -128,7 +128,7 @@ export default function ChatPanel({ token, user }) {
         )}
       </aside>
 
-      <section className="panel brutalCard">
+      <section className="panel surfaceCard">
         <div className="panelTop">
           <h2>{user.role === "patient" ? "Patient Assistant" : "Doctor Report Assistant"}</h2>
           <span className="panelBadge">Live</span>
