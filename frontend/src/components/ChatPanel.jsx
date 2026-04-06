@@ -2,7 +2,7 @@ import React from "react";
 import { useEffect, useState } from "react";
 import { createChat, getChatMessages, listChats, sendChat } from "../api/client";
 
-export default function ChatPanel({ token, user }) {
+export default function ChatPanel({ token, user, doctorWhatsapp = "" }) {
   const [chatId, setChatId] = useState(null);
   const [chats, setChats] = useState([]);
   const [message, setMessage] = useState("");
@@ -71,10 +71,16 @@ export default function ChatPanel({ token, user }) {
     setBusy(true);
 
     try {
-      const data = await sendChat(token, {
+      const payload = {
         message: outgoing,
         chat_id: chatId,
-      });
+      };
+
+      if (user.role === "doctor" && doctorWhatsapp.trim()) {
+        payload.doctor_whatsapp_to = doctorWhatsapp.trim();
+      }
+
+      const data = await sendChat(token, payload);
 
       setChatId(data.chat_id);
       setItems((prev) => [

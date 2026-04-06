@@ -181,7 +181,18 @@ async def send_patient_email(to_email: str, subject: str, body: str) -> dict:
     }
 
 
-async def send_doctor_notification(message: str) -> dict:
+def _normalize_whatsapp_number(target: str) -> str:
+    normalized = (target or "").strip()
+    if not normalized:
+        return ""
+    if normalized.startswith("whatsapp:"):
+        return normalized
+    if normalized.startswith("+"):
+        return f"whatsapp:{normalized}"
+    return normalized
+
+
+async def send_doctor_notification(message: str, doctor_whatsapp_to: str | None = None) -> dict:
     provider = settings.whatsapp_provider.lower().strip()
     if provider != "twilio":
         return {
@@ -190,11 +201,13 @@ async def send_doctor_notification(message: str) -> dict:
             "payload": message,
         }
 
+    target_number = _normalize_whatsapp_number(doctor_whatsapp_to or settings.doctor_whatsapp_to or "")
+
     creds = {
         "TWILIO_ACCOUNT_SID": (settings.twilio_account_sid or "").strip(),
         "TWILIO_AUTH_TOKEN": (settings.twilio_auth_token or "").strip(),
         "TWILIO_WHATSAPP_FROM": (settings.twilio_whatsapp_from or "").strip(),
-        "DOCTOR_WHATSAPP_TO": (settings.doctor_whatsapp_to or "").strip(),
+        "DOCTOR_WHATSAPP_TO": target_number,
     }
     missing_fields = [k for k, v in creds.items() if not v]
     if missing_fields:
@@ -219,6 +232,7 @@ async def send_doctor_notification(message: str) -> dict:
             "mode": "live",
             "message": "Doctor WhatsApp notification sent",
             "sid": twilio_message.sid,
+            "to": creds["DOCTOR_WHATSAPP_TO"],
         }
     except Exception as exc:  # noqa: BLE001
         return {

@@ -17,6 +17,7 @@ from app.core.auth import generate_token, hash_password, token_expiry, token_has
 from app.core.agent import agent
 from app.db.database import get_db
 from app.db.models import AuthToken, ChatMessage, ChatThread, User
+from app.mcp.server import reset_runtime_doctor_whatsapp_to, set_runtime_doctor_whatsapp_to
 
 router = APIRouter(prefix="/api", tags=["api"])
 
@@ -189,7 +190,15 @@ async def chat(req: ChatRequest, user: User = Depends(_current_user), db: Sessio
     db.add(ChatMessage(thread_id=thread.id, sender="user", content=req.message))
     db.commit()
 
-    result = await agent.run(role=user.role, user_message=req.message, session_id=thread.id, history=history)
+    runtime_token = None
+    if user.role == "doctor":
+        runtime_token = set_runtime_doctor_whatsapp_to(req.doctor_whatsapp_to)
+
+    try:
+        result = await agent.run(role=user.role, user_message=req.message, session_id=thread.id, history=history)
+    finally:
+        if runtime_token is not None:
+            reset_runtime_doctor_whatsapp_to(runtime_token)
 
     db.add(
         ChatMessage(

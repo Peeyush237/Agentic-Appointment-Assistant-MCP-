@@ -13,6 +13,7 @@ class LoginRequest(BaseModel):
     email: str
     password: str = Field(min_length=6, max_length=128)
     role: str = Field(pattern="^(patient|doctor)$")
+    doctor_whatsapp_to: str | None = Field(default=None, max_length=40)
 
 
 class UserResponse(BaseModel):
@@ -34,6 +35,7 @@ class ChatCreateRequest(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     chat_id: str | None = None
+    doctor_whatsapp_to: str | None = Field(default=None, max_length=40)
 
 
 class ChatResponse(BaseModel):

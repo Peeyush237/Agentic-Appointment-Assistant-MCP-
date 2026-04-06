@@ -84,6 +84,7 @@ export default function App() {
   const [authRole, setAuthRole] = useState("patient");
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
+  const [doctorWhatsapp, setDoctorWhatsapp] = useState("");
   const [password, setPassword] = useState("");
   const [token, setToken] = useState("");
   const [user, setUser] = useState(null);
@@ -98,6 +99,7 @@ export default function App() {
       if (parsed?.token) {
         setToken(parsed.token);
         setUser(parsed.user || null);
+        setDoctorWhatsapp(parsed.doctor_whatsapp_to || "");
       }
     } catch {
       localStorage.removeItem(STORAGE_KEY);
@@ -119,9 +121,12 @@ export default function App() {
   }, [token]);
 
   function persistAuth(data) {
+    const doctorWhatsappToSave = data.user?.role === "doctor" ? doctorWhatsapp.trim() : "";
+    const persisted = { ...data, doctor_whatsapp_to: doctorWhatsappToSave };
+
     setToken(data.token);
     setUser(data.user);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted));
     setAuthError("");
     setEmail("");
     setFullName("");
@@ -132,7 +137,11 @@ export default function App() {
     setBusy(true);
     setAuthError("");
     try {
-      const data = await login({ email, password, role: authRole });
+      const payload = { email, password, role: authRole };
+      if (authRole === "doctor") {
+        payload.doctor_whatsapp_to = doctorWhatsapp;
+      }
+      const data = await login(payload);
       persistAuth(data);
     } catch (err) {
       setAuthError(err.message);
@@ -162,6 +171,7 @@ export default function App() {
   function onLogout() {
     setToken("");
     setUser(null);
+    setDoctorWhatsapp("");
     localStorage.removeItem(STORAGE_KEY);
   }
 
@@ -204,6 +214,14 @@ export default function App() {
                     disabled={busy}
                   />
                 )}
+                {authRole === "doctor" && (
+                  <input
+                    value={doctorWhatsapp}
+                    onChange={(e) => setDoctorWhatsapp(e.target.value)}
+                    placeholder="Doctor WhatsApp number (+91...)"
+                    disabled={busy}
+                  />
+                )}
                 <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" disabled={busy} />
                 <input
                   type="password"
@@ -215,7 +233,10 @@ export default function App() {
               </div>
 
               <div className="authActions">
-                <button onClick={onLogin} disabled={busy || !email || !password}>
+                <button
+                  onClick={onLogin}
+                  disabled={busy || !email || !password || (authRole === "doctor" && !doctorWhatsapp.trim())}
+                >
                   {busy ? "Please wait..." : "Login"}
                 </button>
                 {authRole === "patient" && (
@@ -258,7 +279,7 @@ export default function App() {
       </section>
 
       <section className="workspaceSection">
-        <ChatPanel token={token} user={user} />
+        <ChatPanel token={token} user={user} doctorWhatsapp={doctorWhatsapp} />
       </section>
     </main>
   );

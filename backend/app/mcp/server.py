@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from contextvars import ContextVar
 from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -22,6 +23,16 @@ MORNING_START_HOUR = 9
 LUNCH_START_HOUR = 13
 AFTERNOON_START_HOUR = 14
 DAY_END_HOUR = 18
+
+RUNTIME_DOCTOR_WHATSAPP_TO: ContextVar[str] = ContextVar("runtime_doctor_whatsapp_to", default="")
+
+
+def set_runtime_doctor_whatsapp_to(number: str | None):
+    return RUNTIME_DOCTOR_WHATSAPP_TO.set((number or "").strip())
+
+
+def reset_runtime_doctor_whatsapp_to(token) -> None:
+    RUNTIME_DOCTOR_WHATSAPP_TO.reset(token)
 
 
 def _is_weekday(day: datetime) -> bool:
@@ -338,7 +349,8 @@ async def _tool_get_doctor_report_stats(arguments: dict[str, Any]) -> dict[str, 
 
 async def _tool_send_doctor_notification(arguments: dict[str, Any]) -> dict[str, Any]:
     report_text = arguments.get("report_text", "No report text provided")
-    sent = await send_doctor_notification(report_text)
+    doctor_whatsapp_to = arguments.get("doctor_whatsapp_to") or RUNTIME_DOCTOR_WHATSAPP_TO.get()
+    sent = await send_doctor_notification(report_text, doctor_whatsapp_to=doctor_whatsapp_to)
     return {"ok": True, "delivery": sent, "message": "Doctor notification sent"}
 
 
@@ -418,7 +430,13 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": "Send doctor report to Slack or alternate notifier",
         "inputSchema": {
             "type": "object",
-            "properties": {"report_text": {"type": "string"}},
+            "properties": {
+                "report_text": {"type": "string"},
+                "doctor_whatsapp_to": {
+                    "type": "string",
+                    "description": "Target WhatsApp number like +919XXXXXXXXX or whatsapp:+919XXXXXXXXX",
+                },
+            },
             "required": ["report_text"],
         },
         "handler": _tool_send_doctor_notification,
