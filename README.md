@@ -1,84 +1,99 @@
-# Full-Stack Developer Intern Assignment - Agentic AI with MCP
+# Agentic Appointment Assistant (MCP + FastAPI + React)
 
-This project is a minimal full-stack implementation of:
-- FastAPI backend
-- MCP server exposing tools/resources/prompts
-- MCP client that dynamically discovers tools at runtime
-- LLM-driven orchestration using tool-calling
-- React frontend for patient and doctor flows
-- PostgreSQL-backed appointments and doctor schedules
+A production-style demo project that shows how to build an MCP-first, tool-calling appointment assistant with clean code, modular design, and real integrations.
 
-## Why this satisfies MCP expectations
+## What this project does
 
-1. Tool execution is routed through MCP client-server protocol
-- The agent never calls tool functions directly.
-- Agent uses `MCPClient` over HTTP JSON-RPC to call `tools/list`, `tools/call`, `prompts/get`.
+- Patient flow: check slots, book appointment, create Google Calendar event, send confirmation email.
+- Doctor flow: generate summary report and send WhatsApp notification.
+- Multi-turn continuity: persistent chat threads per logged-in user.
+- MCP architecture: tools/resources/prompts exposed by MCP server and dynamically consumed by MCP client + LLM orchestrator.
 
-2. Tools are dynamically discovered at runtime
-- `app/core/agent.py` calls MCP `tools/list` on each request and converts schemas to LLM tool definitions.
-- No hardcoded tool schema in orchestration logic.
+## Clean code and modular structure
 
-3. Workflow orchestration is LLM-driven
-- LLM decides when/which tools to call.
-- Backend does not use if/else flow to choose booking/reporting tool sequence.
+This repository follows clear module boundaries so each layer has a single responsibility.
 
-4. Separation of concerns
-- Client: `app/mcp/client.py`
-- Server: `app/mcp/server.py`
-- Tools: MCP handlers in server
-- Prompts: MCP prompt registry (`prompts/list`, `prompts/get`)
-- Resources: MCP resources (`resources/list`, `resources/read`)
+### Backend modules
 
-## Project structure
+- `backend/app/main.py`
+  - FastAPI app bootstrap, routers, middleware setup.
 
-- `backend/app/main.py` - FastAPI app bootstrap
-- `backend/app/api/routes.py` - REST endpoints consumed by frontend
-- `backend/app/core/agent.py` - LLM orchestration loop
-- `backend/app/mcp/server.py` - MCP server protocol + tools/prompts/resources
-- `backend/app/mcp/client.py` - MCP protocol client
-- `backend/app/db/models.py` - PostgreSQL models
-- `frontend/src/App.jsx` - role switch and UI shell
-- `frontend/src/components/ChatPanel.jsx` - multi-turn chat and tool trace
+- `backend/app/api/`
+  - `routes.py`: REST endpoints used by frontend.
+  - `schemas.py`: request/response models for validation.
 
-## Features mapped to assignment scenarios
+- `backend/app/core/`
+  - `agent.py`: LLM orchestration loop with MCP tool-calling.
+  - `integrations.py`: external integrations (Google Calendar, SendGrid, Twilio).
+  - `config.py`: strongly typed environment configuration.
+  - `auth.py`: token/password utilities.
 
-### Clinic schedule rules (enforced by MCP tools)
-- Working days: Monday to Friday
-- Working hours: 9:00 AM-1:00 PM and 2:00 PM-6:00 PM
-- Lunch break: 1:00 PM-2:00 PM
-- Slot duration: 30 minutes
+- `backend/app/mcp/`
+  - `server.py`: MCP JSON-RPC server (`tools/list`, `tools/call`, `resources/*`, `prompts/*`).
+  - `client.py`: MCP client used by the orchestrator.
 
-### Scenario 1: Patient appointment scheduling
-- Patient asks in natural language.
-- LLM calls MCP tool `check_doctor_availability`.
-- LLM calls MCP tool `book_appointment`.
-- Booking tool creates Google Calendar event (mock/live depending on token).
-- LLM then calls MCP tool `send_patient_email`.
-- Frontend shows response and tool trace.
+- `backend/app/db/`
+  - `models.py`: ORM models for users, chats, appointments, etc.
+  - `database.py`: database session and engine setup.
 
-### Conversation continuity
-- Session continuity is maintained by `session_id` and per-session chat history in `AgentOrchestrator`.
-- Second user message can refer to previous turn context (e.g., “book 3 PM slot”).
+### Frontend modules
 
-### Scenario 2: Doctor summary report
-- Doctor asks natural language query (today/tomorrow/yesterday/fever).
-- LLM calls MCP tool `get_doctor_report_stats`.
-- LLM summarizes and calls MCP tool `send_doctor_notification` (WhatsApp via Twilio or mock fallback).
-- Same report flow can be triggered from chat or quick button helper in frontend.
+- `frontend/src/App.jsx`
+  - Auth shell, role switching, demo doctor credentials, top-level layout.
 
-## Setup
+- `frontend/src/components/ChatPanel.jsx`
+  - Chat thread list, message view, send flow, tool-trace display.
 
-## 1) PostgreSQL
-Create database:
-- DB name: `appointment_mcp`
-- User/password: update as needed in env
+- `frontend/src/api/client.js`
+  - API request helpers and endpoint wrappers.
 
-Quick start with Docker:
+### Design principles used
+
+- Separation of concerns: API, orchestration, MCP protocol, integrations, and UI are isolated.
+- Minimal coupling: frontend only talks to REST API; orchestrator only talks to MCP client.
+- Runtime tool discovery: no hardcoded tool contracts in agent logic.
+- Defensive integration behavior: fallback modes and explicit status payloads.
+
+## Project flow (end-to-end)
+
+### Patient booking flow
+
+1. User sends booking prompt in chat.
+2. Frontend calls `POST /api/chat`.
+3. Backend `agent.py` fetches MCP tools/prompts dynamically.
+4. LLM calls:
+   - `check_doctor_availability`
+   - `book_appointment`
+   - `send_patient_email`
+5. `book_appointment` stores DB record and creates Google Calendar event.
+6. Calendar event is now created with patient attendee invite (`sendUpdates=all`).
+7. Assistant response + full tool trace returned to UI.
+
+### Doctor reporting flow
+
+1. Doctor asks for today/tomorrow report.
+2. LLM calls `get_doctor_report_stats`.
+3. LLM (or fallback auto-step) calls `send_doctor_notification`.
+4. Twilio sends WhatsApp notification to env-configured doctor number only.
+5. Delivery status/error details are returned in tool trace.
+
+## Setup guide
+
+### 1) Start PostgreSQL
+
+Use Docker from project root:
+
 ```bash
 docker compose up -d
 ```
 
-## 2) Backend
+Default DB expected by backend env:
+
+- Database: `appointment_mcp`
+- Update credentials in `backend/.env` as needed.
+
+### 2) Backend setup
+
 ```bash
 cd backend
 python -m venv .venv
@@ -87,19 +102,38 @@ pip install -r requirements.txt
 copy .env.example .env
 ```
 
-Update `backend/.env`:
-- `DATABASE_URL`
-- `OPENAI_API_KEY`
-- Google Calendar (recommended): `GOOGLE_REFRESH_TOKEN`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (optional fallback: `GOOGLE_ACCESS_TOKEN`)
-- for live patient email via SendGrid: `EMAIL_PROVIDER=sendgrid`, `EMAIL_FROM`, `EMAIL_API_KEY`
-- for live doctor notifications: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`, `DOCTOR_WHATSAPP_TO`
+Update `backend/.env` with at least:
+
+- Core
+  - `DATABASE_URL`
+  - `OPENAI_API_KEY`
+  - `OPENAI_BASE_URL` (if using provider-compatible endpoint)
+  - `OPENAI_MODEL`
+
+- Google Calendar
+  - Recommended: `GOOGLE_REFRESH_TOKEN`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+  - Optional fallback: `GOOGLE_ACCESS_TOKEN`
+  - `GOOGLE_CALENDAR_ID`
+
+- Email (SendGrid)
+  - `EMAIL_PROVIDER=sendgrid`
+  - `EMAIL_FROM`
+  - `EMAIL_API_KEY`
+
+- WhatsApp (Twilio)
+  - `TWILIO_ACCOUNT_SID`
+  - `TWILIO_AUTH_TOKEN`
+  - `TWILIO_WHATSAPP_FROM`
+  - `DOCTOR_WHATSAPP_TO`
 
 Run backend:
+
 ```bash
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-## 3) Frontend
+### 3) Frontend setup
+
 ```bash
 cd frontend
 npm install
@@ -107,71 +141,99 @@ npm run dev
 ```
 
 Open:
+
 - Frontend: `http://localhost:5173`
 - Backend health: `http://127.0.0.1:8000/api/health`
 
+## Demo login credentials
+
+- Doctor demo user
+  - Email: `doctor@clinic.local`
+  - Password: `doctor123`
+
 ## Sample prompts
 
-Patient mode:
-- "I want to check Dr. Ahuja's availability for Friday afternoon"
-- "Please book the 3 PM slot"
-- "Book Dr. Ahuja tomorrow morning, my email is me@example.com"
+### Patient prompts
 
-Doctor mode:
-- "How many patients visited yesterday for Dr. Ahuja?"
-- "How many appointments do I have today and tomorrow for Dr. Ahuja?"
-- "How many patients with fever visited yesterday for Dr. Ahuja?"
+- "Check Dr. Ahuja availability for tomorrow morning"
+- "Book the 10:30 AM slot with Dr. Ahuja, my name is Alex, my email is alex@gmail.com"
+- "What day is today and what slots are open in the afternoon?"
 
-## API summary
+### Doctor prompts
+
+- "How many appointments does Dr. Ahuja have today?"
+- "Give me today and tomorrow summary for Dr. Ahuja and notify me"
+- "How many appointments had fever yesterday?"
+
+## API usage summary
+
+### Authentication
+
+- `POST /api/auth/register`
+  - Patient registration + session token.
+
+- `POST /api/auth/login`
+  - Login for `patient` or `doctor` role.
+
+- `POST /api/auth/logout`
+  - Invalidates current auth token.
+
+- `GET /api/me`
+  - Returns current user profile from token.
+
+### Chat and threads
+
+- `GET /api/chats`
+  - List current user chat threads.
+
+- `POST /api/chats`
+  - Create a new chat thread.
+
+- `GET /api/chats/{chat_id}/messages`
+  - Fetch message history and tool traces.
 
 - `POST /api/chat`
-  - body: `{ role: "patient" | "doctor", message: string, session_id?: string }`
-  - returns: `{ session_id, response, tool_trace }`
+  - Main assistant endpoint.
+  - Request body:
+    - `message` (string, required)
+    - `chat_id` (string, optional)
+  - Response body:
+    - `chat_id`
+    - `response`
+    - `tool_trace` (tool calls + results)
 
-- MCP endpoint:
-  - `POST /mcp` JSON-RPC methods:
-    - `tools/list`, `tools/call`
-    - `resources/list`, `resources/read`
-    - `prompts/list`, `prompts/get`
+### MCP endpoint
 
-## Optional integrations
+- `POST /mcp` (JSON-RPC)
+  - Methods:
+    - `initialize`
+    - `tools/list`
+    - `tools/call`
+    - `resources/list`
+    - `resources/read`
+    - `prompts/list`
+    - `prompts/get`
 
-- Google Calendar: provide `GOOGLE_CALENDAR_ID` and either:
-  - recommended refresh flow: `GOOGLE_REFRESH_TOKEN`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
-  - fallback static token: `GOOGLE_ACCESS_TOKEN`
-- Email provider (SendGrid): set `EMAIL_PROVIDER=sendgrid`, `EMAIL_FROM` (verified sender), and `EMAIL_API_KEY`
-- Doctor notification (WhatsApp): set Twilio credentials for live notifications
+## Integration notes
 
-### SendGrid quick setup
+### Google Calendar
 
-1. Create SendGrid account and verify a sender identity.
-2. Create an API key with Mail Send permission.
-3. Set values in `backend/.env`:
-  - `EMAIL_PROVIDER=sendgrid`
-  - `EMAIL_FROM=<verified_sender_email>`
-  - `EMAIL_API_KEY=<your_sendgrid_key>`
-4. Restart backend.
+- Events are created in configured calendar (`GOOGLE_CALENDAR_ID`).
+- Patient email is added as attendee, and invite update is requested.
+- Recipient visibility may depend on invite acceptance and mailbox filtering (Spam/Promotions).
 
-### Twilio WhatsApp quick setup
+### Twilio WhatsApp
 
-1. Create a Twilio account and open WhatsApp Sandbox.
-2. Join sandbox from your phone by sending the join code provided by Twilio.
-3. Set values in `backend/.env`:
-  - `TWILIO_ACCOUNT_SID`
-  - `TWILIO_AUTH_TOKEN`
-  - `TWILIO_WHATSAPP_FROM` (usually `whatsapp:+14155238886` in sandbox)
-  - `DOCTOR_WHATSAPP_TO` (example: `whatsapp:+91XXXXXXXXXX`)
-4. Restart backend.
+- Current doctor notification target is env-only (`DOCTOR_WHATSAPP_TO`).
+- In sandbox mode, target number must join the Twilio sandbox first.
 
-## What to demo/screenshots
+## Screenshots
 
-1. Patient booking flow
-- prompt input
-- tool trace with availability -> booking -> email
-- success response
+### Prompt-based appointment booking
 
-2. Doctor reporting flow
-- report prompt
-- tool trace with stats -> notification
-- WhatsApp message (or mock response)
+![Prompt-based appointment booking](image.png)
+
+### Notification to doctor (WhatsApp)
+
+![Doctor notification on WhatsApp](image1.png)
 
