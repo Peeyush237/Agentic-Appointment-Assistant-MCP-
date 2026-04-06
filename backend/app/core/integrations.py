@@ -230,6 +230,17 @@ def _clean_provider_error(text: str) -> str:
     return " ".join(cleaned.split())
 
 
+def _friendly_twilio_error(error_code: int | None, error_message: str | None) -> str:
+    if error_message:
+        return error_message
+    if error_code == 63015:
+        return (
+            "Target number has not joined the Twilio WhatsApp Sandbox. "
+            "From the target phone, send the sandbox join code to the Twilio sandbox number first."
+        )
+    return ""
+
+
 async def send_doctor_notification(message: str, doctor_whatsapp_to: str | None = None) -> dict:
     provider = settings.whatsapp_provider.lower().strip()
     if provider != "twilio":
@@ -292,13 +303,25 @@ async def send_doctor_notification(message: str, doctor_whatsapp_to: str | None 
             pass
 
         if delivery_status in {"failed", "undelivered"}:
+            friendly_error = _friendly_twilio_error(delivery_error_code, delivery_error_message)
             return {
                 "mode": "error",
                 "message": (
                     "Doctor WhatsApp notification failed"
                     + (f" (error_code={delivery_error_code})" if delivery_error_code else "")
-                    + (f": {delivery_error_message}" if delivery_error_message else "")
+                    + (f": {friendly_error}" if friendly_error else "")
                 ),
+                "sid": twilio_message.sid,
+                "to": creds["DOCTOR_WHATSAPP_TO"],
+                "status": delivery_status,
+                "error_code": delivery_error_code,
+                "error_message": friendly_error or delivery_error_message,
+            }
+
+        if delivery_status in {"queued", "accepted", "scheduled", "sending"}:
+            return {
+                "mode": "accepted",
+                "message": "Doctor WhatsApp request accepted by Twilio; delivery is pending",
                 "sid": twilio_message.sid,
                 "to": creds["DOCTOR_WHATSAPP_TO"],
                 "status": delivery_status,
@@ -308,7 +331,7 @@ async def send_doctor_notification(message: str, doctor_whatsapp_to: str | None 
 
         return {
             "mode": "live",
-            "message": "Doctor WhatsApp notification sent",
+            "message": "Doctor WhatsApp notification delivered",
             "sid": twilio_message.sid,
             "to": creds["DOCTOR_WHATSAPP_TO"],
             "status": delivery_status,

@@ -59,7 +59,6 @@ class AgentOrchestrator:
         role: str,
         answer: str,
         tool_trace: list[dict],
-        doctor_whatsapp_to: str | None,
     ) -> list[dict]:
         if role != "doctor":
             return tool_trace
@@ -70,8 +69,6 @@ class AgentOrchestrator:
             return tool_trace
 
         notify_args = {"report_text": answer}
-        if (doctor_whatsapp_to or "").strip():
-            notify_args["doctor_whatsapp_to"] = doctor_whatsapp_to.strip()
 
         try:
             notify_result = await self.mcp.call_tool("send_doctor_notification", notify_args)
@@ -85,7 +82,7 @@ class AgentOrchestrator:
                     "message": f"Auto doctor notification failed: {exc}",
                 },
                 "message": "Doctor notification failed",
-                "target_source": "runtime" if (doctor_whatsapp_to or "").strip() else "default_env",
+                "target_source": "default_env",
             }
 
         tool_trace.append(
@@ -103,7 +100,6 @@ class AgentOrchestrator:
         user_message: str,
         session_id: str | None = None,
         history: list[dict] | None = None,
-        doctor_whatsapp_to: str | None = None,
     ) -> dict:
         if not self.client:
             return {
@@ -180,9 +176,7 @@ class AgentOrchestrator:
 
             if not message.tool_calls:
                 answer = message.content or "No response generated"
-                tool_trace = await self._append_doctor_notification_if_needed(
-                    role, answer, tool_trace, doctor_whatsapp_to
-                )
+                tool_trace = await self._append_doctor_notification_if_needed(role, answer, tool_trace)
 
                 return {"session_id": session_id, "answer": answer, "tool_trace": tool_trace}
 
@@ -203,10 +197,6 @@ class AgentOrchestrator:
 
             for tc in message.tool_calls:
                 args = json.loads(tc.function.arguments or "{}")
-
-                if tc.function.name == "send_doctor_notification" and (doctor_whatsapp_to or "").strip():
-                    # Override hallucinated/masked numbers with authenticated doctor session target.
-                    args["doctor_whatsapp_to"] = doctor_whatsapp_to.strip()
 
                 try:
                     result = await self.mcp.call_tool(tc.function.name, args)
@@ -236,7 +226,6 @@ class AgentOrchestrator:
                 role,
                 "Max tool-call iterations reached. Please refine your request.",
                 tool_trace,
-                doctor_whatsapp_to,
             ),
         }
 

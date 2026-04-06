@@ -194,7 +194,6 @@ async def chat(req: ChatRequest, user: User = Depends(_current_user), db: Sessio
         user_message=req.message,
         session_id=thread.id,
         history=history,
-        doctor_whatsapp_to=req.doctor_whatsapp_to,
     )
 
     db.add(

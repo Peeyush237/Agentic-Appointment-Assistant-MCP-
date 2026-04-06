@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from contextvars import ContextVar
 from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -23,16 +22,6 @@ MORNING_START_HOUR = 9
 LUNCH_START_HOUR = 13
 AFTERNOON_START_HOUR = 14
 DAY_END_HOUR = 18
-
-RUNTIME_DOCTOR_WHATSAPP_TO: ContextVar[str] = ContextVar("runtime_doctor_whatsapp_to", default="")
-
-
-def set_runtime_doctor_whatsapp_to(number: str | None):
-    return RUNTIME_DOCTOR_WHATSAPP_TO.set((number or "").strip())
-
-
-def reset_runtime_doctor_whatsapp_to(token) -> None:
-    RUNTIME_DOCTOR_WHATSAPP_TO.reset(token)
 
 
 def _is_weekday(day: datetime) -> bool:
@@ -349,20 +338,20 @@ async def _tool_get_doctor_report_stats(arguments: dict[str, Any]) -> dict[str, 
 
 async def _tool_send_doctor_notification(arguments: dict[str, Any]) -> dict[str, Any]:
     report_text = arguments.get("report_text", "No report text provided")
-    runtime_target = (RUNTIME_DOCTOR_WHATSAPP_TO.get() or "").strip()
-    tool_arg_target = (arguments.get("doctor_whatsapp_to") or "").strip()
-
-    # Trust runtime authenticated session target first; tool args can be stale or hallucinated.
-    doctor_whatsapp_to = runtime_target or tool_arg_target
-    sent = await send_doctor_notification(report_text, doctor_whatsapp_to=doctor_whatsapp_to)
+    sent = await send_doctor_notification(report_text)
     mode = sent.get("mode")
-    ok = mode == "live"
-    message = "Doctor notification sent" if ok else "Doctor notification failed"
+    ok = mode in {"live", "accepted"}
+    if mode == "live":
+        message = "Doctor notification delivered"
+    elif mode == "accepted":
+        message = "Doctor notification accepted by Twilio (delivery pending)"
+    else:
+        message = "Doctor notification failed"
     return {
         "ok": ok,
         "delivery": sent,
         "message": message,
-        "target_source": "runtime" if runtime_target else ("tool_arg" if tool_arg_target else "default_env"),
+        "target_source": "default_env",
     }
 
 
@@ -444,10 +433,6 @@ TOOLS: dict[str, dict[str, Any]] = {
             "type": "object",
             "properties": {
                 "report_text": {"type": "string"},
-                "doctor_whatsapp_to": {
-                    "type": "string",
-                    "description": "Target WhatsApp number like +919XXXXXXXXX or whatsapp:+919XXXXXXXXX",
-                },
             },
             "required": ["report_text"],
         },
