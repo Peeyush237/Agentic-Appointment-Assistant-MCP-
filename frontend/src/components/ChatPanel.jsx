@@ -101,7 +101,7 @@ export default function ChatPanel({ token, user }) {
 
   return (
     <div className="workspaceGrid">
-      <aside className="chatSidebar">
+      <aside className="chatSidebar brutalCard">
         <div className="chatSidebarHeader">
           <h3>Your Chats</h3>
           <button onClick={startNewChat} disabled={busy}>
@@ -128,8 +128,11 @@ export default function ChatPanel({ token, user }) {
         )}
       </aside>
 
-      <section className="panel">
-        <h2>{user.role === "patient" ? "Patient Assistant" : "Doctor Report Assistant"}</h2>
+      <section className="panel brutalCard">
+        <div className="panelTop">
+          <h2>{user.role === "patient" ? "Patient Assistant" : "Doctor Report Assistant"}</h2>
+          <span className="panelBadge">Live</span>
+        </div>
         <p className="hint">
           {user.role === "patient"
             ? "Try: I want to book an appointment with Dr. Ahuja tomorrow morning"
@@ -139,6 +142,7 @@ export default function ChatPanel({ token, user }) {
         <div className="chatWindow">
           {items.map((item, idx) => (
             <div key={idx} className={`bubble ${item.from}`}>
+              <div className="bubbleMeta">{item.from === "user" ? "You" : "Assistant"}</div>
               <div>{item.text}</div>
               {item.trace && item.trace.length > 0 && (
                 <details>

@@ -1,9 +1,16 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=VT323&display=swap");
+
 :root {
-  --bg: #f7f6f2;
-  --card: #fff9eb;
-  --ink: #1f2a37;
-  --accent: #0e7490;
-  --accent-soft: #cffafe;
+  --bg-main: #dff957;
+  --bg-secondary: #98e5c1;
+  --bg-tertiary: #f7a5d7;
+  --paper: #fdfdf4;
+  --ink: #101010;
+  --line: #101010;
+  --accent: #07a046;
+  --danger: #e73c58;
+  --shadow: 6px 6px 0 #101010;
+  --radius: 0;
 }
 
 * {
@@ -12,64 +19,148 @@
 
 body {
   margin: 0;
-  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
   color: var(--ink);
-  background:
-    radial-gradient(circle at 10% 10%, #fff2cc 0%, transparent 35%),
-    radial-gradient(circle at 90% 30%, #d9f99d 0%, transparent 30%),
-    var(--bg);
   min-height: 100vh;
+  background:
+    linear-gradient(90deg, transparent 49.5%, #101010 49.5%, #101010 50.5%, transparent 50.5%),
+    linear-gradient(0deg, transparent 49.5%, #101010 49.5%, #101010 50.5%, transparent 50.5%),
+    linear-gradient(140deg, var(--bg-main) 0%, var(--bg-main) 32%, var(--bg-secondary) 32%, var(--bg-secondary) 67%, var(--bg-tertiary) 67%, var(--bg-tertiary) 100%);
+  background-size: 28px 28px, 28px 28px, cover;
+  animation: bgShift 18s linear infinite;
+}
+
+@keyframes bgShift {
+  0% {
+    background-position: 0 0, 0 0, 0 0;
+  }
+  100% {
+    background-position: 28px 28px, -28px -28px, 0 0;
+  }
 }
 
 .container {
-  max-width: 920px;
+  max-width: 1140px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 22px;
+  display: grid;
+  gap: 14px;
 }
 
-header h1 {
-  margin-bottom: 4px;
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: "VT323", monospace;
+  letter-spacing: 0.04em;
 }
 
-.roleToggle {
+h1 {
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  text-transform: uppercase;
+}
+
+h2 {
+  font-size: clamp(1.6rem, 2.8vw, 2.3rem);
+}
+
+h3 {
+  font-size: 1.7rem;
+}
+
+p {
+  margin: 0;
+}
+
+.brutalCard {
+  background: var(--paper);
+  border: 3px solid var(--line);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius);
+}
+
+.heroBlock {
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.heroTopbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--line);
+  background: #ffd83e;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 4px 9px;
+}
+
+.appHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+.dashboardTags {
   display: flex;
   gap: 8px;
-  margin: 12px 0 16px;
-}
-
-.sessionBar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 12px;
-}
-
-.roleToggle button,
-button {
-  border: none;
-  border-radius: 10px;
-  padding: 10px 14px;
-  cursor: pointer;
-  background: #d1d5db;
-}
-
-.roleToggle button.active {
-  background: var(--accent);
-  color: white;
-}
-
-.panel {
-  background: var(--card);
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  padding: 16px;
+  flex-wrap: wrap;
 }
 
 .authCard {
-  background: var(--card);
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  max-width: 680px;
   padding: 16px;
-  max-width: 540px;
+  display: grid;
+  gap: 14px;
+}
+
+.roleToggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+button {
+  border: 3px solid var(--line);
+  border-radius: var(--radius);
+  background: #f5f5f5;
+  color: var(--ink);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 10px 12px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 #101010;
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+
+button:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #101010;
+}
+
+button:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 #101010;
+}
+
+button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.roleToggle button.active {
+  background: #7ee787;
 }
 
 .authFields {
@@ -77,35 +168,54 @@ button {
   gap: 8px;
 }
 
+input {
+  width: 100%;
+  border: 3px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: 14px;
+  background: #fff;
+}
+
+input:focus {
+  outline: none;
+  background: #f8ffcc;
+}
+
 .authActions {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
+  flex-wrap: wrap;
 }
 
 .authError {
-  color: #b91c1c;
-  margin-top: 10px;
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.sessionBar {
+  display: flex;
+  gap: 8px;
 }
 
 .workspaceGrid {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 290px 1fr;
   gap: 12px;
+  align-items: start;
 }
 
 .chatSidebar {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
   padding: 10px;
-  min-height: 520px;
+  min-height: 580px;
+  background: #e2f8b9;
 }
 
 .chatSidebarHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   margin-bottom: 8px;
 }
 
@@ -115,77 +225,125 @@ button {
 }
 
 .chatListItem {
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border: 3px solid var(--line);
+  background: #fdfdf4;
   text-align: left;
-  border-radius: 10px;
-  padding: 8px;
+  box-shadow: 2px 2px 0 #101010;
 }
 
 .chatListItem.active {
-  border-color: #0e7490;
-  background: #ecfeff;
+  background: #ffb7e6;
 }
 
 .chatListTitle {
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 14px;
 }
 
 .chatListMeta {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.panel {
+  padding: 12px;
+  background: #fff7df;
+  display: grid;
+  gap: 10px;
+}
+
+.panelTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.panelBadge {
+  border: 2px solid var(--line);
+  background: #47e0bf;
   font-size: 12px;
-  color: #64748b;
+  font-weight: 700;
+  padding: 3px 8px;
+  text-transform: uppercase;
 }
 
 .hint {
-  color: #475569;
-  margin-top: 0;
+  color: #303030;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .chatWindow {
-  min-height: 320px;
-  max-height: 420px;
+  min-height: 350px;
+  max-height: 470px;
   overflow: auto;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  background: #fff;
+  border: 3px solid var(--line);
   padding: 10px;
+  display: grid;
+  gap: 8px;
 }
 
 .bubble {
-  margin: 8px 0;
-  padding: 10px;
-  border-radius: 10px;
+  border: 3px solid var(--line);
+  padding: 8px 10px;
+  box-shadow: 2px 2px 0 #101010;
+  display: grid;
+  gap: 6px;
+}
+
+.bubbleMeta {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .bubble.user {
-  background: var(--accent-soft);
+  background: #b8f5ff;
 }
 
 .bubble.assistant {
-  background: #f8fafc;
+  background: #ffd7a7;
+}
+
+details {
+  border-top: 2px dashed #101010;
+  padding-top: 6px;
+}
+
+summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+pre {
+  white-space: pre-wrap;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 12px;
+  margin: 6px 0 0;
+  line-height: 1.4;
 }
 
 .composer {
-  margin-top: 10px;
+  margin-top: 4px;
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 8px;
 }
 
-input {
-  width: 100%;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  padding: 10px;
-}
-
-pre {
-  white-space: pre-wrap;
-  font-size: 12px;
-}
-
 .quickActions {
-  margin-top: 10px;
+  margin-top: 2px;
+}
+
+@media (max-width: 920px) {
+  .workspaceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .chatSidebar {
+    min-height: 260px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -193,11 +351,15 @@ pre {
     padding: 12px;
   }
 
-  .workspaceGrid {
-    grid-template-columns: 1fr;
+  .appHeader {
+    flex-direction: column;
   }
 
   .composer {
+    grid-template-columns: 1fr;
+  }
+
+  .roleToggle {
     grid-template-columns: 1fr;
   }
 }

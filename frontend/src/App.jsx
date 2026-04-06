@@ -93,12 +93,19 @@ export default function App() {
   if (!token || !user) {
     return (
       <main className="container">
-        <header>
-          <h1>Agentic Appointment Assistant (MCP)</h1>
-          <p>Sign in as patient or doctor to access your own chat history and appointments.</p>
-        </header>
+        <section className="heroBlock brutalCard">
+          <div className="heroTopbar">
+            <span className="pill">MCP</span>
+            <span className="pill">Auth</span>
+            <span className="pill">Calendar</span>
+          </div>
+          <h1>Agentic Appointment Assistant</h1>
+          <p>Brutalist edition. Login as patient or doctor to unlock your own persistent chats and booking history.</p>
+        </section>
 
-        <section className="authCard">
+        <section className="authCard brutalCard">
+          <h2>{authRole === "patient" ? "Patient Access" : "Doctor Access"}</h2>
+
           <div className="roleToggle">
             <button className={authRole === "patient" ? "active" : ""} onClick={() => setAuthRole("patient")}>
               Patient Login
@@ -146,17 +153,22 @@ export default function App() {
 
   return (
     <main className="container">
-      <header>
-        <h1>Agentic Appointment Assistant (MCP)</h1>
-        <p>
-          Logged in as {user.full_name} ({user.role})
-        </p>
+      <header className="appHeader brutalCard">
+        <div>
+          <h1>Agentic Appointment Assistant</h1>
+          <p>
+            Logged in as <strong>{user.full_name}</strong> ({user.role})
+          </p>
+        </div>
+        <div className="sessionBar">
+          <button onClick={onLogout}>Logout</button>
+        </div>
       </header>
 
-      <div className="sessionBar">
-        <button onClick={onLogout}>
-          Logout
-        </button>
+      <div className="dashboardTags">
+        <span className="pill">Role: {user.role}</span>
+        <span className="pill">Stored Threads</span>
+        <span className="pill">LLM + MCP Tools</span>
       </div>
 
       <ChatPanel token={token} user={user} />
